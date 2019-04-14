@@ -1,4 +1,4 @@
-# Nanoblog - self-hosted microblog
+# Nanoblog - open source microblog with buffering and Twitter crossposting
 
 Nanoblog is a simple and professional blog with a 280 character limit that supports crossposting to your Twitter account. Posts can also be buffered for automatic publication on a selected schedule to keep your blog and Twitter account fresh.
 
