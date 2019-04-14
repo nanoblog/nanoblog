@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+        <meta name="referrer" content="origin">
+        <link rel="icon" href="/profile?v={{$.Version}}">
+        <link rel="apple-touch-icon" href="/profile?v={{$.Version}}">
+
+        <title>{{if $.Info.Name}}{{$.Info.Name}}{{else}}Nanoblog{{end}}</title>
+
+        <link rel="stylesheet" type="text/css" href="/static/roboto.css?v={{$.Version}}">
+        <link rel="stylesheet" type="text/css" href="/static/semantic/semantic.min.css?v={{$.Version}}">
+        <link rel="stylesheet" type="text/css" href="/static/style.css?v={{$.Version}}">
+
+        <script src="/static/jquery.min.js?v={{$.Version}}"></script>
+        <script src="/static/semantic/semantic.min.js?v={{$.Version}}"></script>
+    </head>
+    <body>
+        <div class="borderless ui massive stackable menu">
+            <div class="ui container">
+                {{if and $.Backlink $.Admin}}
+                    <a class="item" href="{{.Backlink}}"><i class="home icon"></i></a>
+                {{end}}
+
+                {{if and $.Info.Headerlink1 $.Info.Headerlink1URL}}
+                    <a href="{{$.Info.Headerlink1URL}}" class="{{if eq $.Info.Headerlink1URL "/"}}active{{end}} item">{{$.Info.Headerlink1}}</a>
+                {{end}}
+                {{if and $.Info.Headerlink2 $.Info.Headerlink2URL}}
+                    <a href="{{$.Info.Headerlink2URL}}" class="{{if eq $.Info.Headerlink2URL "/"}}active{{end}} item">{{$.Info.Headerlink2}}</a>
+                {{end}}
+                {{if and $.Info.Headerlink3 $.Info.Headerlink3URL}}
+                    <a href="{{$.Info.Headerlink3URL}}" class="{{if eq $.Info.Headerlink3URL "/"}}active{{end}} item">{{$.Info.Headerlink3}}</a>
+                {{end}}
+
+                {{if $.Admin}}
+                    <div class="right menu">
+                        <a href="/admin" class="{{if hasprefix $.Section "admin/"}}active{{end}} item">Admin</a>
+                    </div>
+                {{end}}
+            </div>
+        </div>
+
+        {{if hasprefix $.Section "admin/"}}
+            <!-- nothing here -->
+            <div class="ui container">
+                <div class="ui huge secondary pointing stackable menu">
+                    <div class="ui container">
+                        <a class="{{if eq $.Section "admin/index"}}active{{end}} item" href="/admin">Buffer</a>
+                        <a class="{{if eq $.Section "admin/settings"}}active{{end}} item" href="/admin/settings">Settings</a>
+                        <a class="item confirm" data-prompt="Sign out?" href="/signout">Sign Out</a>
+                    </div>
+                </div>
+            </div>
+        {{end}}
+
+        <div class="ui hidden divider"></div>

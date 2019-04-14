@@ -1,0 +1,85 @@
+{{template "header.html" .}}
+
+<div class="ui container">
+    <div class="ui mobile reversed stackable grid">
+        <div class="four wide column">
+            <div class="ui padded segment">
+                <div class="ui small header"><i class="brand search icon"></i>Search</div>
+                <form class="ui form" action="/" method="GET">
+                    <div class="field">
+                        <input type="text" name="q" placeholder="Search">
+                    </div>
+                </form>
+            </div>
+
+            <div class="ui hidden divider"></div>
+
+            <div class="ui padded segment">
+                <div class="ui small header"><i class="brand info circle icon"></i>About</div>
+                <div class="page-text">
+                    {{$.Info.Description}}
+                </div>
+            </div>
+
+            <div class="ui hidden divider"></div>
+            {{if $.Admin}}
+                <div class="ui padded segment">
+                    <div class="ui small header"><i class="small brand user circle icon"></i>Admin Console</div>
+                    <div class="page-text center-aligned">
+                        <a href="/admin" class="ui fluid basic button">Admin Console</a>
+                    </div>
+                </div>
+            {{else}}
+                <div class="ui padded segment">
+                    <div class="ui small header"><i class="small brand user circle icon"></i>Sign In</div>
+                    <div class="page-text center-aligned">
+                        <a href="/signin" class="ui fluid basic button">Sign In</a>
+                    </div>
+                </div>
+            {{end}}
+
+
+            {{with $screenname := $.Info.Twitter.ScreenName}}
+                <div class="ui hidden divider"></div>
+
+                <div class="ui padded segment">
+                    <div class="ui small header"><i class="brand twitter square icon"></i>Follow on Twitter</div>
+                    <div class="page-text">
+                        <a target="_blank" href="https://twitter.com/{{$screenname}}" class="ui brand fluid button">@{{$screenname}}</a>
+                    </div>
+                </div>
+            {{end}}
+        </div>
+        <div class="twelve wide column">
+            <a href="/" class="ui large basic button"><i class="long arrow alternate left icon"></i>{{$.Info.Name}}</a>
+            <div class="ui hidden divider"></div>
+
+            <div class="ui padded segment">
+                {{range $post := $.Posts}}
+                    <!-- post -->
+                    <div class="post">
+                        <div class="ui large right floated horizontal divided link list">
+                            {{if $post.Tweet}}
+                                <a class="item" href="https://twitter.com/{{$.Info.Twitter.ID}}/status/{{$post.Tweet}}"><i class="brand twitter square icon"></i></a>
+                            {{end}}
+                            {{if $.Admin}}
+                                    <a href="/admin/posts/delete/{{$post.ID}}?f={{$.Post.ID}}" class="item confirm" data-prompt="Delete post?"><i class="grey trash icon"></i></a>
+                            {{end}}
+                        </div>
+                        <a href="/posts/{{$post.ID}}" class="post-header">
+                            <img src="/profile">
+                            {{$.Info.Name}} <span title="{{$post.Created}}">&middot; {{dateshort $post.Created}}</span>
+                        </a>
+                        <div class="post-body">
+                            {{enhance $post.Body}}
+                        </div>
+                    </div>
+                    <!-- post -->
+                {{end}}
+            </div>
+        </div>
+    </div>
+
+</div>
+
+{{template "footer.html" .}}

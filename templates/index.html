@@ -1,0 +1,154 @@
+{{template "header.html" .}}
+
+{{$query := $.Request.FormValue "q"}}
+
+<div class="ui container">
+    <div class="ui mobile reversed stackable grid">
+
+        <div class="four wide column">
+
+            <div class="ui padded segment">
+                <form class="ui form" action="/" method="GET">
+                    <div class="field">
+                        <input type="text" name="q" placeholder="Search">
+                    </div>
+                </form>
+            </div>
+            <div class="ui hidden divider"></div>
+
+            <div class="ui padded segment">
+                <div class="center-aligned">
+                    <img class="profile-image" src="/profile">
+                </div>
+                <div class="ui center aligned header">{{$.Info.Name}}</div>
+                <div class="page-text center-aligned">
+                    {{$.Info.Description}}
+                </div>
+
+                {{with $screenname := $.Info.Twitter.ScreenName}}
+                    <div class="ui section divider"></div>
+                        <div class="page-text">
+                            <a target="_blank" href="https://twitter.com/{{$screenname}}" class="ui brand fluid button">@{{$screenname}}</a>
+                        </div>
+
+                {{end}}
+
+            </div>
+
+            <div class="ui hidden divider"></div>
+
+            <div class="ui padded segment">
+                {{if $.Admin}}
+                    <div class="page-text center-aligned">
+                        <a href="/admin" class="ui fluid basic button">Admin Console</a>
+                    </div>
+                {{else}}
+                    <div class="page-text center-aligned">
+                        <a href="/signin" class="ui fluid basic button">Sign In</a>
+                    </div>
+                {{end}}
+            </div>
+        </div>
+
+        <div class="twelve wide column">
+            {{if $query}}
+                <a href="/" class="ui large basic button"><i class="long arrow alternate left icon"></i>Search results for &quot;{{$query}}&quot;</a>
+                <div class="ui hidden divider"></div>
+
+                {{if not $.Posts}}
+                    <div class="ui center aligned grey header">No posts found</div>
+                {{end}}
+
+            {{end}}
+
+            <div class="ui padded segment">
+                {{if not $query}}
+                    {{if $.Admin}}
+                        <form id="post-form" class="ui huge form post-form" action="/admin/posts/add" method="POST">
+                            <div class="field">
+                                <textarea name="body" class="post-form-body" rows="5" maxlength="280" placeholder="What's happening?"></textarea>
+                            </div>
+                            <div class="equal width fields">
+                                <div class="field mobile hidden"></div>
+                                <div class="field mobile hidden"></div>
+                                <div class="field right-aligned">
+                                    <a title="Add another update" class="add-body-button ui huge basic icon button"><i class="ui brand plus circle icon"></i></a>
+                                    <button type="submit" class="ui huge brand button">Post</button>
+                                </div>
+                            </div>
+                        </form>
+                        <div class="ui hidden divider"></div>
+                    {{end}}
+                {{end}}
+
+                {{if $.Posts}}
+                    {{range $post := $.Posts}}
+                        <!-- post -->
+                        <div class="post">
+                            <div class="ui large right floated horizontal divided link list">
+                                {{if $post.Tweet}}
+                                    <a class="item" href="https://twitter.com/{{$.Info.Twitter.ID}}/status/{{$post.Tweet}}"><i class="brand twitter square icon"></i></a>
+                                {{end}}
+                            </div>
+                            <a href="/posts/{{$post.ID}}" class="post-header">
+                                <img src="/profile">
+                                {{$.Info.Name}} <span>&middot; {{dateshort $post.Created}}</span>
+                            </a>
+                            <div class="post-body">
+                                {{enhance $post.Body}}
+                            </div>
+
+                            {{if $post.Thread}}
+                                <a href="/posts/{{$post.ID}}" class="ui basic button">Show this thread</a>
+                            {{end}}
+                            <!-- post -->
+                        </div>
+                    {{end}}
+                {{else}}
+                    <div class="ui center aligned grey header">There are no posts yet.</div>
+                {{end}}
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    $(document).ready(function() {
+        $(document).on('click', '.remove-body-button', function() {
+            $(this).parent().parent().remove();
+        });
+
+        $('.add-body-button').click(function() {
+            var fieldHTML = '<div class="field">';
+            fieldHTML += '<textarea name="body" class="post-form-body" rows="5" maxlength="280" placeholder="Add another update"></textarea>';
+            fieldHTML += '<br><br>';
+
+            fieldHTML += '<div class="right-aligned">';
+            fieldHTML += '<a class="remove-body-button ui small basic icon button"><i class="grey trash icon"></i></a>';
+            fieldHTML += '</div>';
+
+            fieldHTML += '</div>';
+            $(this).parent().parent().before(fieldHTML);
+        });
+    });
+</script>
+
+{{if 0}}
+    <!--div class="right-aligned">
+    <span id="countdown">280</span>
+    </div-->
+
+    <script>
+        function updateCountdown() {
+            var remaining = 280 - $('#body').val().length;
+            $('#countdown').text(remaining);
+        }
+        $(document).ready(function() {
+            $('#body').change(updateCountdown);
+            $('#body').keyup(updateCountdown);
+        });
+    </script>
+{{end}}
+
+{{template "footer.html" .}}

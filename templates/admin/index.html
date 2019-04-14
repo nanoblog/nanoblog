@@ -1,0 +1,122 @@
+{{template "header.html" .}}
+
+<div class="ui container">
+
+    {{with $success := $.Request.FormValue "success"}}
+        <div class="ui info message">
+            <div class="header">
+                {{if eq $success "settings"}}
+                    Settings saved successfully
+                {{else if eq $success "removed"}}
+                    Removed successfully
+                {{end}}
+            </div>
+            <a class="close-link" href="/"><i class="close icon"></i></a>
+        </div>
+    {{end}}
+    {{with $error := $.Request.FormValue "error"}}
+        <div class="ui large negative message">
+            <div class="content">
+                <div class="header">
+                    {{if eq $error "adding"}}
+                        Adding property failed
+                    {{else if eq $error "removing"}}
+                        Removing property failed
+                    {{else}}
+                        {{$error}}
+                    {{end}}
+                </div>
+                <a class="close-link" href="/"><i class="close icon"></i></a>
+            </div>
+        </div>
+        <div class="ui hidden divider"></div>
+    {{end}}
+
+    <div class="ui stackable grid">
+        <div class="two wide column mobile hidden">
+            &nbsp;
+        </div>
+        <div class="twelve wide column">
+
+            <div class="ui padded segment">
+                <div class="ui huge blue dividing header">Post Buffer</div>
+                <div class="ui huge message">
+                    <i class="info circle grey icon"></i>Buffered posts are automatically published according to the selected schedule.
+                </div>
+                <div class="ui hidden divider"></div>
+
+                <form class="ui huge form post-form" action="/admin/posts/add" method="POST">
+                    <div class="field">
+                        <textarea id="body" name="body" class="post-form-body" rows="5" maxlength="280" autofocus></textarea>
+                    </div>
+                    <div class="equal width fields">
+                        <div class="field mobile hidden"></div>
+                        <div class="field mobile hidden"></div>
+                        <div class="field right-aligned">
+                            <button type="submit" name="queue" value="yes" class="ui huge orange button">Add Post</button>
+                        </div>
+                    </div>
+                </form>
+                <div class="ui hidden divider"></div>
+
+                    <div class="ui huge blue dividing header">Buffer Schedule</div>
+                    <div class="ui huge message">
+                        <i class="info circle grey icon"></i>After 12 hours without a new post, a buffered post will be automatically published.
+                    </div>
+                    <div class="ui hidden divider"></div>
+                    <form class="ui huge form" method="POST" action="/admin/schedule">
+                        <div class="equal width fields">
+                            <div class="field">
+                                <button type="submit" name="schedule" value="6" class="ui fluid {{if eq $.Info.Schedule.Hours 6.00}}blue{{else}}basic{{end}} button"}>6 hours</button>
+                            </div>
+
+                            <div class="field">
+                                <button type="submit" name="schedule" value="12" class="ui fluid {{if eq $.Info.Schedule.Hours 12.00}}blue{{else}}basic{{end}} button"}>12 hours</button>
+                            </div>
+
+                            <div class="field">
+                                <button type="submit" name="schedule" value="24" class="ui fluid {{if eq $.Info.Schedule.Hours 24.00}}blue{{else}}basic{{end}} button"}>1 day</button>
+                            </div>
+
+                        </div>
+                        <div class="equal width fields">
+                            <div class="field">
+                                <button type="submit" name="schedule" value="48" class="ui fluid {{if eq $.Info.Schedule.Hours 48.00}}blue{{else}}basic{{end}} button"}>2 days</button>
+                            </div>
+
+                            <div class="field">
+                                <button type="submit" name="schedule" value="36" class="ui fluid {{if eq $.Info.Schedule.Hours 36.00}}blue{{else}}basic{{end}} button"}>3 days</button>
+                            </div>
+
+                            <div class="field">
+                                <button type="submit" name="schedule" value="168" class="ui fluid {{if eq $.Info.Schedule.Hours 168.00}}blue{{else}}basic{{end}} button"}>7 days</button>
+                            </div>
+                        </div>
+                    </form>
+
+                {{if $.Drafts}}
+                    <div class="ui section divider"></div>
+
+                    {{range $draft := $.Drafts}}
+                        <div class="post">
+                            <div class="ui large right floated horizontal divided link list">
+                                <a href="/admin/drafts/delete/{{$draft.ID}}" class="item confirm" data-prompt="Delete?"><i class="grey trash icon"></i></a>
+                            </div>
+                            <a class="post-header">
+                                <img src="/profile">
+                                {{$.Info.Name}}
+                            </a>
+                            <div class="post-body">
+                                {{enhance $draft.Body}}
+                            </div>
+                        </div>
+                    {{end}}
+                {{else}}
+                    <div class="ui center aligned grey header">No buffered posts yet</div>
+                {{end}}
+            </div>
+        </div>
+    </div>
+
+</div>
+{{template "footer.html" .}}
