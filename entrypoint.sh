@@ -32,7 +32,7 @@ if ! test -d /etc/sv/nanoblog ; then
     mkdir /etc/sv/nanoblog
     cat <<RUNIT >/etc/sv/nanoblog/run
 #!/bin/sh
-exec /usr/bin/nanoblog
+exec /usr/bin/nanoblog \
     "--http-host=${NANOBLOG_HTTP_HOST}" \
     "--http-addr=${NANOBLOG_HTTP_ADDR}" \
     "--http-insecure=${NANOBLOG_HTTP_INSECURE}" \

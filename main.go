@@ -129,7 +129,7 @@ func main() {
 		if msg != "" {
 			fmt.Fprintf(os.Stderr, "ERROR: %s\n", msg)
 		}
-		fmt.Fprintf(os.Stderr, "Usage: %s --http-host analytics.example.com\n\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "Usage: %s --http-host blog.example.com\n\n", os.Args[0])
 		cli.PrintDefaults()
 	}
 	if showHelp {
