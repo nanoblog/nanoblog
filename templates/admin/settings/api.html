@@ -1,0 +1,91 @@
+{{template "header.html" .}}
+
+<div class="ui container">
+    <div class="ui padded segment">
+        {{with $success := $.Request.FormValue "success"}}
+            <div class="ui info message">
+                <div class="header">
+                    {{if eq $success "changes"}}
+                        Changes saved successfully
+                    {{else if eq $success "todo"}}
+                        TODO
+                    {{end}}
+                </div>
+                <a class="close-link" href="/admin/settings/api"><i class="close icon"></i></a>
+            </div>
+            <div class="ui hidden divider"></div>
+        {{end}}
+        {{with $error := $.Request.FormValue "error"}}
+            <div class="ui large negative message">
+                <div class="content">
+                    <div class="header">
+                        {{if eq $error "invalid"}}
+                            Invalid. Please try again.
+                        {{else if eq $error "twitter"}}
+                            Linking Twitter failed. Please verify API credentials.
+                        {{else}}
+                            {{$error}}
+                        {{end}}
+                    </div>
+                    <a class="close-link" href="/admin/settings/api"><i class="close icon"></i></a>
+                </div>
+            </div>
+            <div class="ui hidden divider"></div>
+        {{end}}
+
+
+        <form class="ui large form" action="/admin/settings/api" method="POST" novalidate autocomplete="off" enctype="multipart/form-data">
+            <div class="ui blue dividing header">Twitter API</div>
+            <div class="ui message">
+                <i class="info circle grey icon"></i>Enter Twitter Developer API credentials to enable Twitter crossposting.
+                <div class="ui middle aligned divided list">
+                    <div class="item">
+                        1. Create a <a href="https://developer.twitter.com" target="_blank">Twitter developer account</a> using your existing Twitter account.
+                    </div>
+                    <div class="item">
+                        2. Create an app for your blog on the <b>Developer &gt; Apps</b> page.
+                    </div>
+                    <div class="item">
+                        3. From the <b>App details &gt; Keys and tokens</b> page, copy your consumer key, consumer secret, and generate your access token &amp; access token secret.
+                    </div>
+                </div>
+            </div>
+            <div class="ui hidden divider"></div>
+
+            <div class="equal width fields">
+                <div class="field">
+                    <div class="ui small header">Consumer Key</div>
+                    <input name="twitter_consumer_key" type="text" placeholder="Consumer Key" value="{{$.Info.Twitter.ConsumerKey}}">
+                </div>
+                <div class="field">
+                    <div class="ui small header">Consumer Secret</div>
+                    <input name="twitter_consumer_secret" type="text" placeholder="Consumer Secret" value="{{$.Info.Twitter.ConsumerSecret}}">
+                </div>
+            </div>
+            <div class="equal width fields">
+                <div class="field">
+                    <div class="ui small header">Access Token</div>
+                    <input name="twitter_access_token" type="text" placeholder="Access Token" value="{{$.Info.Twitter.AccessToken}}">
+                </div>
+                <div class="field">
+                    <div class="ui small header">Access Token Secret</div>
+                    <input name="twitter_access_token_secret" type="text" placeholder="Access Token Secret" value="{{$.Info.Twitter.AccessTokenSecret}}">
+                </div>
+            </div>
+
+            <div class="equal width fields">
+                <div class="field mobile hidden">&nbsp;</div>
+                <div class="field">
+                    <div class="two ui buttons">
+                        <a href="/" class="ui large button">Cancel</a>
+                        <button type="submit" class="ui large blue button">Save</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+</div>
+
+{{template "footer.html" .}}
+

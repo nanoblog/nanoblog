@@ -1,0 +1,89 @@
+{{template "header.html" .}}
+
+<div class="ui container">
+    <div class="ui padded segment">
+        {{with $success := $.Request.FormValue "success"}}
+            <div class="ui info message">
+                <div class="header">
+                    {{if eq $success "changes"}}
+                        Changes saved successfully
+                    {{else if eq $success "todo"}}
+                        TODO
+                    {{end}}
+                </div>
+                <a class="close-link" href="/admin/settings/menu"><i class="close icon"></i></a>
+            </div>
+            <div class="ui hidden divider"></div>
+        {{end}}
+        {{with $error := $.Request.FormValue "error"}}
+            <div class="ui large negative message">
+                <div class="content">
+                    <div class="header">
+                        {{if eq $error "invalid"}}
+                            Invalid. Please try again.
+                        {{else}}
+                            {{$error}}
+                        {{end}}
+                    </div>
+                    <a class="close-link" href="/admin/settings/menu"><i class="close icon"></i></a>
+                </div>
+            </div>
+            <div class="ui hidden divider"></div>
+        {{end}}
+
+        <form class="ui large form" action="/admin/settings/menu" method="POST" novalidate autocomplete="off" enctype="multipart/form-data">
+            <div class="ui blue dividing header">Menu links</div>
+            <div class="ui message">
+                <i class="info circle grey icon"></i>Menu links are displayed in the header of your blog.
+            </div>
+            <div class="ui hidden divider"></div>
+
+            <div class="equal width fields">
+                <div class="field">
+                    <div class="ui small header">Menu Link 1</div>
+                    <input name="headerlink1" type="text" placeholder="e.g. Homepage" value="{{$.Info.Headerlink1}}">
+                </div>
+                <div class="field">
+                    <div class="ui small header">Menu Link 1 URL</div>
+                    <input name="headerlink1_url" type="text" placeholder="e.g. https://example.com/" value="{{$.Info.Headerlink1URL}}">
+                </div>
+            </div>
+
+            <div class="equal width fields">
+                <div class="field">
+                    <div class="ui small header">Menu Link 2</div>
+                    <input name="headerlink2" type="text" placeholder="e.g. Homepage" value="{{$.Info.Headerlink2}}">
+                </div>
+                <div class="field">
+                    <div class="ui small header">Menu Link 2 URL</div>
+                    <input name="headerlink2_url" type="text" placeholder="e.g. https://example.com/" value="{{$.Info.Headerlink2URL}}">
+                </div>
+            </div>
+
+            <div class="equal width fields">
+                <div class="field">
+                    <div class="ui small header">Menu Link 3</div>
+                    <input name="headerlink3" type="text" placeholder="e.g. Homepage" value="{{$.Info.Headerlink3}}">
+                </div>
+                <div class="field">
+                    <div class="ui small header">Menu Link URL 3</div>
+                    <input name="headerlink3_url" type="text" placeholder="e.g. https://example.com/" value="{{$.Info.Headerlink3URL}}">
+                </div>
+            </div>
+
+            <div class="equal width fields">
+                <div class="field mobile hidden">&nbsp;</div>
+                <div class="field">
+                    <div class="two ui buttons">
+                        <a href="/" class="ui large button">Cancel</a>
+                        <button type="submit" class="ui large blue button">Save</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+</div>
+
+{{template "footer.html" .}}
+

@@ -1,0 +1,28 @@
+<!-- left sidebar -->
+<div class="ui padded segment">
+    <form class="ui form" action="/" method="GET">
+        <div class="field">
+            <input type="text" name="q" placeholder="Search">
+        </div>
+    </form>
+</div>
+<div class="ui hidden divider"></div>
+
+<div class="ui padded segment">
+    <div class="center-aligned">
+        <img class="profile-image" src="/profile">
+    </div>
+    <div class="ui center aligned header">{{$.Info.Name}}</div>
+    <div class="page-text center-aligned">
+        {{$.Info.Description}}
+    </div>
+
+    {{with $screenname := $.Info.Twitter.ScreenName}}
+        <div class="ui section divider"></div>
+        <div class="page-text">
+            <a target="_blank" href="https://twitter.com/{{$screenname}}" class="ui brand fluid button">@{{$screenname}}</a>
+        </div>
+    {{end}}
+</div>
+<!-- left sidebar -->
+

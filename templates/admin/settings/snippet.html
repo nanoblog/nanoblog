@@ -1,0 +1,59 @@
+{{template "header.html" .}}
+
+<div class="ui container">
+    <div class="ui padded segment">
+        {{with $success := $.Request.FormValue "success"}}
+            <div class="ui info message">
+                <div class="header">
+                    {{if eq $success "changes"}}
+                        Changes saved successfully
+                    {{else if eq $success "todo"}}
+                        TODO
+                    {{end}}
+                </div>
+                <a class="close-link" href="/admin/settings/snippet"><i class="close icon"></i></a>
+            </div>
+            <div class="ui hidden divider"></div>
+        {{end}}
+        {{with $error := $.Request.FormValue "error"}}
+            <div class="ui large negative message">
+                <div class="content">
+                    <div class="header">
+                        {{if eq $error "invalid"}}
+                            Invalid. Please try again.
+                        {{else}}
+                            {{$error}}
+                        {{end}}
+                    </div>
+                    <a class="close-link" href="/admin/settings/snippet"><i class="close icon"></i></a>
+                </div>
+            </div>
+            <div class="ui hidden divider"></div>
+        {{end}}
+
+
+        <form class="ui large form" action="/admin/settings/snippet" method="POST" novalidate autocomplete="off" enctype="multipart/form-data">
+            <div class="ui blue dividing header">Analytics tracking code</div>
+            <div class="ui message">
+                <i class="info circle grey icon"></i>Add your web analytics tracking code or other HTML snippets.
+            </div>
+            <div class="ui hidden divider"></div>
+            <div class="field">
+                <textarea name="snippet" {{if $.Info.Snippet}}rows="9"}}{{else}}rows="6"{{end}} placeholder="&lt;script&gt;...&lt;/script&gt;">{{$.Info.Snippet}}</textarea>
+            </div>
+            <div class="equal width fields">
+                <div class="field mobile hidden">&nbsp;</div>
+                <div class="field">
+                    <div class="two ui buttons">
+                        <a href="/" class="ui large button">Cancel</a>
+                        <button type="submit" class="ui large blue button">Save</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+</div>
+
+{{template "footer.html" .}}
+
