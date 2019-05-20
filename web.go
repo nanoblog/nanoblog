@@ -22,8 +22,8 @@ import (
 )
 
 var (
-	SessionCookieName    = "__subspace_session"
-	SessionCookieNameSSO = "__subspace_sso_session"
+	SessionCookieName    = "__nanoblog_session"
+	SessionCookieNameSSO = "__nanoblog_sso_session"
 
 	urlRegexp       = xurls.Relaxed()
 	linebreakRegexp = regexp.MustCompile(`\r?\n`)

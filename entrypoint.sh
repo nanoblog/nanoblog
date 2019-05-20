@@ -19,12 +19,12 @@ if [ -z "${NANOBLOG_LETSENCRYPT-}" ] ; then
     export NANOBLOG_LETSENCRYPT="true"
 fi
 
-if [ -z "${SUBSPACE_HTTP_ADDR-}" ] ; then
-    export SUBSPACE_HTTP_ADDR=":80"
+if [ -z "${NANOBLOG_HTTP_ADDR-}" ] ; then
+    export NANOBLOG_HTTP_ADDR=":80"
 fi
 
-if [ -z "${SUBSPACE_HTTP_INSECURE-}" ] ; then
-    export SUBSPACE_HTTP_INSECURE="false"
+if [ -z "${NANOBLOG_HTTP_INSECURE-}" ] ; then
+    export NANOBLOG_HTTP_INSECURE="false"
 fi
 
 # nanoblog service
