@@ -5,38 +5,45 @@ import (
 	"time"
 )
 
-var dmanDelay = 10 * time.Minute
+var dmanInterval = 30 * time.Second
 
 func dman() {
 	logger.Infof("dman> init")
 
 	for {
-		time.Sleep(dmanDelay)
+		time.Sleep(dmanInterval)
+		logger.Debugf("dman> running checks")
 
+		now := time.Now().In(getTimezone())
 		drafts := config.ListDrafts()
 		info := config.FindInfo()
 
-		logger.Infof("dman> there are %d drafts", len(drafts))
-
-		// No drafts
+		// Skip because there are no drafts.
 		if len(drafts) == 0 {
+			logger.Debugf("dman> skipping because there are no drafts")
 			continue
 		}
-		draft := drafts[0]
 
-		posts := config.ListPosts()
-		if len(posts) > 0 {
-			mostrecent := time.Now().Sub(posts[0].Created)
-			if info.Schedule > mostrecent {
-				logger.Infof("dman> skipping draft because schedule %s > post %s", info.Schedule, mostrecent)
-				continue
-			}
-			logger.Infof("dman> adding draft because most recent post is %s old", mostrecent)
+		// Skip if not the correct hour.
+		if now.Hour() != info.ScheduleHour {
+			logger.Debugf("dman> skipping because now %d is not the scheduled hour %d", now.Hour(), info.ScheduleHour)
+			continue
 		}
 
-		post, err := config.AddPost(draft.Body, "")
+		// Skip if most recently posted.
+		lastPost, err := config.MostRecentScheduledPost()
+		if err == nil {
+			lastPostAge := now.Sub(lastPost.Created)
+			if info.Schedule > lastPostAge {
+				logger.Debugf("dman> skipping draft because schedule %s > post %s", info.Schedule, lastPostAge)
+				continue
+			}
+		}
+
+		draft := drafts[0]
+		post, err := config.AddPost(draft.Body, "", true)
 		if err != nil {
-			logger.Warnf("dman> add post failed: %s", err)
+			logger.Errorf("dman> add post failed: %s", err)
 			continue
 		}
 		config.DeleteDraft(draft.ID)

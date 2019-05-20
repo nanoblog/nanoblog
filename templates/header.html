@@ -18,41 +18,49 @@
         <script src="/static/semantic/semantic.min.js?v={{$.Version}}"></script>
     </head>
     <body>
-        <div class="borderless ui massive stackable menu">
-            <div class="ui container">
-                {{if and $.Backlink $.Admin}}
-                    <a class="item" href="{{.Backlink}}"><i class="home icon"></i></a>
-                {{end}}
+        {{if ne $.Section "domain"}}
+            <div class="borderless ui large stackable menu">
+                <div class="ui container">
+                    {{if and $.Backlink $.Admin}}
+                        <a class="item" href="{{.Backlink}}"><i class="home icon"></i></a>
+                    {{end}}
 
-                {{if and $.Info.Headerlink1 $.Info.Headerlink1URL}}
-                    <a href="{{$.Info.Headerlink1URL}}" class="{{if eq $.Info.Headerlink1URL "/"}}active{{end}} item">{{$.Info.Headerlink1}}</a>
-                {{end}}
-                {{if and $.Info.Headerlink2 $.Info.Headerlink2URL}}
-                    <a href="{{$.Info.Headerlink2URL}}" class="{{if eq $.Info.Headerlink2URL "/"}}active{{end}} item">{{$.Info.Headerlink2}}</a>
-                {{end}}
-                {{if and $.Info.Headerlink3 $.Info.Headerlink3URL}}
-                    <a href="{{$.Info.Headerlink3URL}}" class="{{if eq $.Info.Headerlink3URL "/"}}active{{end}} item">{{$.Info.Headerlink3}}</a>
-                {{end}}
+                    {{if and $.Info.Headerlink1 $.Info.Headerlink1URL}}
+                        <a href="{{$.Info.Headerlink1URL}}" class="{{if eq $.Info.Headerlink1URL "/"}}active{{end}} item">{{$.Info.Headerlink1}}</a>
+                    {{end}}
+                    {{if and $.Info.Headerlink2 $.Info.Headerlink2URL}}
+                        <a href="{{$.Info.Headerlink2URL}}" class="{{if eq $.Info.Headerlink2URL "/"}}active{{end}} item">{{$.Info.Headerlink2}}</a>
+                    {{end}}
+                    {{if and $.Info.Headerlink3 $.Info.Headerlink3URL}}
+                        <a href="{{$.Info.Headerlink3URL}}" class="{{if eq $.Info.Headerlink3URL "/"}}active{{end}} item">{{$.Info.Headerlink3}}</a>
+                    {{end}}
 
-                {{if $.Admin}}
                     <div class="right menu">
-                        <a href="/admin" class="{{if hasprefix $.Section "admin/"}}active{{end}} item">Admin</a>
-                    </div>
-                {{end}}
-            </div>
-        </div>
-
-        {{if hasprefix $.Section "admin/"}}
-            <!-- nothing here -->
-            <div class="ui container">
-                <div class="ui huge secondary pointing stackable menu">
-                    <div class="ui container">
-                        <a class="{{if eq $.Section "admin/index"}}active{{end}} item" href="/admin">Buffer</a>
-                        <a class="{{if eq $.Section "admin/settings"}}active{{end}} item" href="/admin/settings">Settings</a>
-                        <a class="item confirm" data-prompt="Sign out?" href="/signout">Sign Out</a>
+                        {{if $.Admin}}
+                            <a href="/admin" class="{{if eq $.Section "admin/index"}}active{{end}} item">Queue</a>
+                            <a href="/admin/settings" class="{{if hasprefix $.Section "admin/settings"}}active{{end}} item">Settings</a>
+                            <a class="item confirm" data-prompt="Sign out?" href="/signout" title="Sign out">Sign Out</a>
+                        {{else}}
+                            <a class="item" href="/signin" title="Sign in">Sign In</a>
+                        {{end}}
                     </div>
                 </div>
             </div>
+
+            {{if hasprefix $.Section "admin/settings"}}
+                <div class="ui container">
+                    <div class="ui large secondary pointing stackable menu">
+                        <div class="ui container">
+                            <a class="{{if eq $.Section "admin/settings/index"}}active{{end}} item" href="/admin/settings">General Settings</a>
+                            <a class="{{if eq $.Section "admin/settings/menu"}}active{{end}} item" href="/admin/settings/menu">Menu Links</a>
+                            <a class="{{if eq $.Section "admin/settings/sso"}}active{{end}} item" href="/admin/settings/sso">SSO</a>
+                            <a class="{{if eq $.Section "admin/settings/api"}}active{{end}} item" href="/admin/settings/api">Twitter API</a>
+                            <a class="{{if eq $.Section "admin/settings/snippet"}}active{{end}} item" href="/admin/settings/snippet">Analytics</a>
+                            <a class="{{if eq $.Section "admin/settings/password"}}active{{end}} item" href="/admin/settings/password">Change Password</a>
+                        </div>
+                    </div>
+                </div>
+            {{end}}
         {{end}}
 
         <div class="ui hidden divider"></div>

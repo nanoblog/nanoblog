@@ -5,21 +5,30 @@ import (
 	"encoding/gob"
 	"fmt"
 	"html/template"
+	"net"
 	"net/http"
+	"net/url"
+	"regexp"
 	"strings"
 	"time"
 
+	"github.com/ChimeraCoder/anaconda"
+	"github.com/crewjam/saml"
+	"github.com/crewjam/saml/samlsp"
 	humanize "github.com/dustin/go-humanize"
-	httprouter "github.com/julienschmidt/httprouter"
-	bluemonday "github.com/microcosm-cc/bluemonday"
-	blackfriday "gopkg.in/russross/blackfriday.v2"
+	"github.com/julienschmidt/httprouter"
+	"golang.org/x/net/publicsuffix"
+	xurls "mvdan.cc/xurls"
 )
 
 var (
-	SessionCookieName                            = "__nanoblog_session"
-	blackfridayFlags      blackfriday.HTMLFlags  = blackfriday.UseXHTML | blackfriday.HrefTargetBlank | blackfriday.Safelink | blackfriday.SkipHTML | blackfriday.SkipImages
-	blackfridayExtensions blackfriday.Extensions = blackfriday.HardLineBreak | blackfriday.Autolink
-	sanitizer                                    = bluemonday.UGCPolicy()
+	SessionCookieName    = "__subspace_session"
+	SessionCookieNameSSO = "__subspace_sso_session"
+
+	urlRegexp       = xurls.Relaxed()
+	linebreakRegexp = regexp.MustCompile(`\r?\n`)
+	hashtagRegexp   = regexp.MustCompile(`#(\S+)`)
+	imageRegexp     = regexp.MustCompile(`\.(?i:jpeg|jpg|png|gif)`)
 )
 
 type Session struct {
@@ -44,15 +53,18 @@ type Web struct {
 	Section  string
 	Time     time.Time
 	Info     Info
+	SAML     *samlsp.Middleware
+	Email    string
 
 	// Paging
 	Page int
 
 	// Additional
-	Twitter bool
+	Twitter *anaconda.TwitterApi
 
-	Post  Post
-	Posts []Post
+	Post       Post
+	Posts      []Post
+	PostParent Post
 
 	Draft  Draft
 	Drafts []Draft
@@ -83,14 +95,30 @@ func (w *Web) HTML() {
 		"bytes": func(n int64) string {
 			return fmt.Sprintf("%.2f GB", float64(n)/1024/1024/1024)
 		},
+		"hourstamp": func(hour int) string {
+			t := time.Date(0, 0, 0, hour, 0, 0, 0, time.UTC)
+			return t.Format(time.Kitchen)
+		},
+		"days": func(d time.Duration) string {
+			return fmt.Sprintf("%0.f", d.Hours()/float64(24))
+		},
 		"date": func(t time.Time) string {
 			return t.Format(time.UnixDate)
 		},
 		"dateshort": func(t time.Time) string {
-			if time.Now().Year() < t.Year() {
-				return t.Format("Jan 2 2006")
+			now := time.Now().In(t.Location())
+			diff := now.Sub(t)
+
+			if diff < (59 * time.Second) {
+				return fmt.Sprintf("%.0fs", diff.Seconds())
+			} else if diff < (59 * time.Minute) {
+				return fmt.Sprintf("%.0fm", diff.Minutes())
+			} else if diff < (24 * time.Hour) {
+				return fmt.Sprintf("%.0fh", diff.Hours())
+			} else if t.Year() == now.Year() {
+				return t.Format("3:04 PM · Jan 2")
 			}
-			return t.Format("Jan 2")
+			return t.Format("3:04 PM · Jan 2 2006")
 		},
 		"time": humanize.Time,
 		"jsfloat64": func(n float64) template.JS {
@@ -106,14 +134,48 @@ func (w *Web) HTML() {
 			return template.HTML(s)
 		},
 		"enhance": func(s string) template.HTML {
-			r := blackfriday.NewHTMLRenderer(blackfriday.HTMLRendererParameters{Flags: blackfridayFlags})
-			h := blackfriday.Run(
-				[]byte(s),
-				blackfriday.WithNoExtensions(),
-				blackfriday.WithExtensions(blackfridayExtensions),
-				blackfriday.WithRenderer(r),
-			)
-			return template.HTML(sanitizer.SanitizeBytes(h))
+			// Linkify URLs and display inline media.
+			matches := urlRegexp.FindAllString(s, -1)
+			for _, match := range matches {
+				tmpurl := match
+
+				if !strings.HasPrefix(match, "http") {
+					tmpurl = "https://" + match
+				}
+				u, err := url.Parse(tmpurl)
+				if err != nil {
+					continue
+				}
+				if u.Scheme != "http" && u.Scheme != "https" {
+					continue
+				}
+				if u.Host == "" {
+					continue
+				}
+				if u.Path == "" {
+					u.Path = "/"
+				}
+
+				var link string
+
+				if imageRegexp.MatchString(u.Path) {
+					// Display image inline.
+					link = fmt.Sprintf(`<a href="%s" target="_blank"><img src="%s" class="ui fluid rounded bordered image"></a>`, u.String(), u.String())
+				} else {
+					// Linkify URL
+					host := strings.TrimPrefix(u.Host, "www.")
+					link = fmt.Sprintf(`<a href="%s" title="%s">%s%s</a>`, u.String(), u.String(), host, u.Path)
+				}
+				s = strings.ReplaceAll(s, match, link)
+			}
+
+			// Create linebreaks.
+			s = linebreakRegexp.ReplaceAllString(s, "<br>\n")
+
+			// Linkify hashtags.
+			s = hashtagRegexp.ReplaceAllString(s, `<a href="/?q=%23${1}">#${1}</a>`)
+
+			return template.HTML(s)
 		},
 		"truncate": func(s string, n int) string {
 			if len(s) > n {
@@ -127,6 +189,26 @@ func (w *Web) HTML() {
 		},
 		"linebreaks": func(s string) template.HTML {
 			return template.HTML(strings.Replace(s, "\n", "\n<br>\n", -1))
+		},
+		"ssoprovider": func() string {
+			if samlSP == nil {
+				return ""
+			}
+			redirect, err := url.Parse(samlSP.ServiceProvider.GetSSOBindingLocation(saml.HTTPRedirectBinding))
+			if err != nil {
+				logger.Warnf("SSO redirect invalid URL: %s", err)
+				return "unknown"
+			}
+			domain, err := publicsuffix.EffectiveTLDPlusOne(redirect.Host)
+			if err != nil {
+				logger.Warnf("SSO redirect invalid URL domain: %s", err)
+				return "unknown"
+			}
+			suffix, icann := publicsuffix.PublicSuffix(domain)
+			if icann {
+				suffix = "." + suffix
+			}
+			return strings.Title(strings.TrimSuffix(domain, suffix))
 		},
 	})
 
@@ -179,13 +261,14 @@ func WebHandler(h func(*Web), section string) httprouter.Handle {
 
 			HTTPHost: httpHost,
 			Backlink: backlink,
-			Time:     time.Now(),
+			Time:     time.Now().In(getTimezone()),
 			Version:  version,
 			Request:  r,
 			Section:  section,
 			Info:     config.FindInfo(),
 
-			Twitter: twitterAPI != nil,
+			Twitter: twitterAPI,
+			SAML:    samlSP,
 		}
 
 		var public = map[string]bool{
@@ -196,13 +279,52 @@ func WebHandler(h func(*Web), section string) httprouter.Handle {
 			"profile":    true,
 			"banner":     true,
 			"posts/view": true,
-		}
-		session, _ := ValidateSession(r)
-		if session != nil && session.Admin {
-			web.Admin = true
+			"domain":     true,
 		}
 
-		if public[section] {
+		if section == "signout" {
+			h(web)
+			return
+		}
+
+		// Send user to custom domain URL if one is configured.
+		// Without forcing them, so they can avoid it if there's a DNS issue, etc.
+		if domain := config.FindInfo().Domain; domain != "" {
+			if r.Host != domain {
+				if section == "index" {
+					web.Redirect("/domain")
+					return
+				}
+			}
+		}
+
+		// Has a valid session.
+		if session, _ := ValidateSession(r); session != nil {
+			logger.Infof("session exists admin is %t", session.Admin)
+			web.Admin = session.Admin
+		} else if samlSP != nil {
+			// SAML auth.
+			if token := samlSP.GetAuthorizationToken(r); token != nil {
+				r = r.WithContext(samlsp.WithToken(r.Context(), token))
+
+				email := token.StandardClaims.Subject
+				if email == "" {
+					Error(w, fmt.Errorf("SAML token missing email"))
+					return
+				}
+
+				web.Email = email
+				web.Admin = true
+
+				logger.Debugf("valid SSO token, signing in session")
+				if err := web.SigninSession(true); err != nil {
+					Error(web.w, err)
+					return
+				}
+			}
+		}
+
+		if web.Admin || public[section] {
 			h(web)
 			return
 		}
@@ -212,12 +334,8 @@ func WebHandler(h func(*Web), section string) httprouter.Handle {
 			return
 		}
 
-		if session == nil || !session.Admin {
-			logger.Errorf("auth failed")
-			web.Redirect("/signin")
-			return
-		}
-		h(web)
+		logger.Warnf("auth: sign in required")
+		web.Redirect("/signin")
 	}
 }
 
@@ -268,39 +386,57 @@ func ValidateSession(r *http.Request) (*Session, error) {
 	return session, nil
 }
 
-func NewDeletionCookie() *http.Cookie {
-	return &http.Cookie{
+func (w *Web) SignoutSession() {
+	domain, _, err := net.SplitHostPort(w.r.Host)
+	if err != nil {
+		logger.Warnf("parsing Host header failed: %s", err)
+	}
+	http.SetCookie(w.w, &http.Cookie{
+		Name:     SessionCookieNameSSO,
+		Value:    "",
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   !httpInsecure,
+		Domain:   domain,
+		MaxAge:   -1,
+		Expires:  time.Unix(1, 0),
+	})
+	http.SetCookie(w.w, &http.Cookie{
 		Name:     SessionCookieName,
 		Value:    "",
 		Path:     "/",
 		HttpOnly: true,
-		Secure:   letsencrypt,
+		Secure:   !httpInsecure,
+		Domain:   domain,
 		MaxAge:   -1,
 		Expires:  time.Unix(1, 0),
-	}
+	})
 }
 
-func NewSessionCookie(r *http.Request) (*http.Cookie, error) {
-	expires := time.Now().Add(720 * time.Hour)
+func (w *Web) SigninSession(admin bool) error {
+	expires := time.Now().Add(12 * time.Hour)
 
-	session := Session{
-		Admin:     true,
+	encoded, err := securetoken.Encode(SessionCookieName, Session{
+		Admin:     admin,
 		NotBefore: time.Now(),
 		NotAfter:  expires,
-	}
-
-	encoded, err := securetoken.Encode(SessionCookieName, session)
+	})
 	if err != nil {
-		return nil, fmt.Errorf("auth: encoding error: %s", err)
+		return fmt.Errorf("auth: encoding error: %s", err)
 	}
-
-	cookie := &http.Cookie{
+	domain, _, err := net.SplitHostPort(w.r.Host)
+	if err != nil {
+		logger.Warnf("parsing Host header failed: %s", err)
+	}
+	logger.Infof("HTTP INSECURE IS %t (so Secure: %t)", httpInsecure, !httpInsecure)
+	http.SetCookie(w.w, &http.Cookie{
 		Name:     SessionCookieName,
 		Value:    encoded,
 		Path:     "/",
+		Domain:   domain,
 		HttpOnly: true,
-		Secure:   letsencrypt,
+		Secure:   !httpInsecure,
 		Expires:  expires,
-	}
-	return cookie, nil
+	})
+	return nil
 }

@@ -1,51 +1,99 @@
 {{template "header.html" .}}
 
 <div class="ui container">
-
-    {{with $success := $.Request.FormValue "success"}}
-        <div class="ui info message">
-            <div class="header">
-                {{if eq $success "settings"}}
-                    Settings saved successfully
-                {{else if eq $success "removed"}}
-                    Removed successfully
-                {{end}}
-            </div>
-            <a class="close-link" href="/"><i class="close icon"></i></a>
-        </div>
-    {{end}}
-    {{with $error := $.Request.FormValue "error"}}
-        <div class="ui large negative message">
-            <div class="content">
-                <div class="header">
-                    {{if eq $error "adding"}}
-                        Adding property failed
-                    {{else if eq $error "removing"}}
-                        Removing property failed
-                    {{else}}
-                        {{$error}}
-                    {{end}}
-                </div>
-                <a class="close-link" href="/"><i class="close icon"></i></a>
-            </div>
-        </div>
-        <div class="ui hidden divider"></div>
-    {{end}}
-
-    <div class="ui stackable grid">
-        <div class="two wide column mobile hidden">
-            &nbsp;
-        </div>
-        <div class="twelve wide column">
-
+    <div class="ui mobile reversed stackable grid">
+        <div class="four wide column">
             <div class="ui padded segment">
-                <div class="ui huge blue dividing header">Post Buffer</div>
-                <div class="ui huge message">
-                    <i class="info circle grey icon"></i>Buffered posts are automatically published according to the selected schedule.
+                {{with $success := $.Request.FormValue "success"}}
+                    <div class="ui info message">
+                        <div class="header">
+                            {{if eq $success "settings"}}
+                                Settings saved successfully
+                            {{else if eq $success "removed"}}
+                                Removed successfully
+                            {{end}}
+                        </div>
+                        <a class="close-link" href="/"><i class="close icon"></i></a>
+                    </div>
+                {{end}}
+                {{with $error := $.Request.FormValue "error"}}
+                    <div class="ui large negative message">
+                        <div class="content">
+                            <div class="header">
+                                {{if eq $error "adding"}}
+                                    Adding property failed
+                                {{else if eq $error "removing"}}
+                                    Removing property failed
+                                {{else}}
+                                    {{$error}}
+                                {{end}}
+                            </div>
+                            <a class="close-link" href="/"><i class="close icon"></i></a>
+                        </div>
+                    </div>
+                    <div class="ui hidden divider"></div>
+                {{end}}
+
+                <!--div class="ui large message">
+                    <i class="info circle grey icon"></i>A buffered post will be automatically published every {{if gt $.Info.Schedule.Hours 24.0}}{{days $.Info.Schedule}} days{{else}}day{{end}} at {{hourstamp $.Info.ScheduleHour}} {{$.Info.Location}}.
+                </div-->
+
+                <div class="ui large blue dividing header">Posting schedule</div>
+                <form class="ui large form" method="POST" action="/admin/schedule">
+                    <div class="field">
+                        <select name="schedule">
+                            <option value="24" {{if eq $.Info.Schedule.Hours 24.0}}selected{{end}}>Every day</option>
+                            <option value="48" {{if eq $.Info.Schedule.Hours 48.0}}selected{{end}}>Every 2 days</option>
+                            <option value="72" {{if eq $.Info.Schedule.Hours 72.0}}selected{{end}}>Every 3 days</option>
+                            <option value="168" {{if eq $.Info.Schedule.Hours 168.0}}selected{{end}}>Every 7 days</option>
+                            <option value="240" {{if eq $.Info.Schedule.Hours 240.0}}selected{{end}}>Every 10 days</option>
+                            <option value="336" {{if eq $.Info.Schedule.Hours 336.0}}selected{{end}}>Every 14 days</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <select name="hour">
+                            <option value="6" {{if eq $.Info.ScheduleHour 6}}selected{{end}}>at 6:00 AM</option>
+                            <option value="7" {{if eq $.Info.ScheduleHour 7}}selected{{end}}>at 7:00 AM</option>
+                            <option value="8" {{if eq $.Info.ScheduleHour 8}}selected{{end}}>at 8:00 AM</option>
+                            <option value="9" {{if eq $.Info.ScheduleHour 9}}selected{{end}}>at 9:00 AM</option>
+                            <option value="10" {{if eq $.Info.ScheduleHour 10}}selected{{end}}>at 10:00 AM</option>
+                            <option value="11" {{if eq $.Info.ScheduleHour 11}}selected{{end}}>at 11:00 AM</option>
+                            <option value="12" {{if eq $.Info.ScheduleHour 12}}selected{{end}}>at 12:00 PM</option>
+                            <option value="13" {{if eq $.Info.ScheduleHour 13}}selected{{end}}>at 1:00 PM</option>
+                            <option value="14" {{if eq $.Info.ScheduleHour 14}}selected{{end}}>at 2:00 PM</option>
+                            <option value="15" {{if eq $.Info.ScheduleHour 15}}selected{{end}}>at 3:00 PM</option>
+                            <option value="16" {{if eq $.Info.ScheduleHour 16}}selected{{end}}>at 4:00 PM</option>
+                            <option value="17" {{if eq $.Info.ScheduleHour 17}}selected{{end}}>at 5:00 PM</option>
+                            <option value="18" {{if eq $.Info.ScheduleHour 18}}selected{{end}}>at 6:00 PM</option>
+                            <option value="19" {{if eq $.Info.ScheduleHour 19}}selected{{end}}>at 7:00 PM</option>
+                            <option value="20" {{if eq $.Info.ScheduleHour 20}}selected{{end}}>at 8:00 PM</option>
+                            <option value="21" {{if eq $.Info.ScheduleHour 21}}selected{{end}}>at 9:00 PM</option>
+                            <option value="22" {{if eq $.Info.ScheduleHour 22}}selected{{end}}>at 10:00 PM</option>
+                            <option value="23" {{if eq $.Info.ScheduleHour 23}}selected{{end}}>at 11:00 PM</option>
+                            <option value="0" {{if eq $.Info.ScheduleHour 0}}selected{{end}}>at 12:00 AM</option>
+                            <option value="1" {{if eq $.Info.ScheduleHour 1}}selected{{end}}>at 1:00 AM</option>
+                            <option value="2" {{if eq $.Info.ScheduleHour 2}}selected{{end}}>at 2:00 AM</option>
+                            <option value="3" {{if eq $.Info.ScheduleHour 3}}selected{{end}}>at 3:00 AM</option>
+                            <option value="4" {{if eq $.Info.ScheduleHour 4}}selected{{end}}>at 4:00 AM</option>
+                            <option value="5" {{if eq $.Info.ScheduleHour 5}}selected{{end}}>at 5:00 AM</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <button type="submit" class="ui blue fluid button">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="twelve wide column">
+            <div class="ui padded segment">
+                <div class="ui large blue dividing header">Queued posts</div>
+                <div class="ui large message">
+                    <i class="info circle grey icon"></i>Queued posts are automatically published according to the selected schedule.
                 </div>
                 <div class="ui hidden divider"></div>
 
-                <form class="ui huge form post-form" action="/admin/posts/add" method="POST">
+                <form class="ui large form post-form" action="/admin/posts/add" method="POST">
                     <div class="field">
                         <textarea id="body" name="body" class="post-form-body" rows="5" maxlength="280" autofocus></textarea>
                     </div>
@@ -53,47 +101,10 @@
                         <div class="field mobile hidden"></div>
                         <div class="field mobile hidden"></div>
                         <div class="field right-aligned">
-                            <button type="submit" name="queue" value="yes" class="ui huge orange button">Add Post</button>
+                            <button type="submit" name="queue" value="yes" class="ui large blue button">Queue post</button>
                         </div>
                     </div>
                 </form>
-                <div class="ui hidden divider"></div>
-
-                    <div class="ui huge blue dividing header">Buffer Schedule</div>
-                    <div class="ui huge message">
-                        <i class="info circle grey icon"></i>After 12 hours without a new post, a buffered post will be automatically published.
-                    </div>
-                    <div class="ui hidden divider"></div>
-                    <form class="ui huge form" method="POST" action="/admin/schedule">
-                        <div class="equal width fields">
-                            <div class="field">
-                                <button type="submit" name="schedule" value="6" class="ui fluid {{if eq $.Info.Schedule.Hours 6.00}}blue{{else}}basic{{end}} button"}>6 hours</button>
-                            </div>
-
-                            <div class="field">
-                                <button type="submit" name="schedule" value="12" class="ui fluid {{if eq $.Info.Schedule.Hours 12.00}}blue{{else}}basic{{end}} button"}>12 hours</button>
-                            </div>
-
-                            <div class="field">
-                                <button type="submit" name="schedule" value="24" class="ui fluid {{if eq $.Info.Schedule.Hours 24.00}}blue{{else}}basic{{end}} button"}>1 day</button>
-                            </div>
-
-                        </div>
-                        <div class="equal width fields">
-                            <div class="field">
-                                <button type="submit" name="schedule" value="48" class="ui fluid {{if eq $.Info.Schedule.Hours 48.00}}blue{{else}}basic{{end}} button"}>2 days</button>
-                            </div>
-
-                            <div class="field">
-                                <button type="submit" name="schedule" value="36" class="ui fluid {{if eq $.Info.Schedule.Hours 36.00}}blue{{else}}basic{{end}} button"}>3 days</button>
-                            </div>
-
-                            <div class="field">
-                                <button type="submit" name="schedule" value="168" class="ui fluid {{if eq $.Info.Schedule.Hours 168.00}}blue{{else}}basic{{end}} button"}>7 days</button>
-                            </div>
-                        </div>
-                    </form>
-
                 {{if $.Drafts}}
                     <div class="ui section divider"></div>
 
@@ -112,8 +123,10 @@
                         </div>
                     {{end}}
                 {{else}}
-                    <div class="ui center aligned grey header">No buffered posts yet</div>
+                    <div class="ui hidden divider"></div>
+                    <div class="ui center aligned grey header">No queued posts yet</div>
                 {{end}}
+
             </div>
         </div>
     </div>

@@ -52,5 +52,27 @@
 
         </script>
 
+        {{if eq $.Section "index" "posts/view"}}
+            <script>
+                $(document).ready(function() {
+                    $(document).on('click', '.remove-body-button', function() {
+                        $(this).parent().parent().remove();
+                    });
+
+                    $('.add-body-button').click(function() {
+                        var fieldHTML = '<div class="field">';
+                        fieldHTML += '<div class="ui hidden divider"></div>';
+                        fieldHTML += '<textarea name="body" class="post-form-body" rows="5" maxlength="280" placeholder="Add another post"></textarea>';
+                        fieldHTML += '<br><br>';
+                        fieldHTML += '<div class="right-aligned">';
+                        fieldHTML += '<a class="remove-body-button ui small basic icon button"><i class="grey trash icon"></i></a>';
+                        fieldHTML += '</div>';
+                        fieldHTML += '</div>';
+                        $(this).parent().parent().before(fieldHTML);
+                    });
+                });
+            </script>
+        {{end}}
+
     </body>
 </html>

@@ -1,4 +1,4 @@
-FROM golang:1.11.5
+FROM golang:1.12.5
 MAINTAINER github.com/nanoblog/nanoblog
 
 RUN apt-get update \
@@ -18,8 +18,9 @@ RUN go get -v \
 	golang.org/x/crypto/bcrypt \
 	gopkg.in/gomail.v2 \
 	github.com/ChimeraCoder/anaconda \
-	github.com/microcosm-cc/bluemonday \
-	gopkg.in/russross/blackfriday.v2
+	mvdan.cc/xurls \
+    github.com/crewjam/saml \
+    github.com/dgrijalva/jwt-go
 
 COPY *.go ./
 COPY static ./static
@@ -37,3 +38,4 @@ RUN go-bindata --pkg main static/... templates/... email/... \
 
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
     go build -v --compiler gc --ldflags "-extldflags -static -s -w -X main.version=${BUILD_VERSION}" -o /usr/bin/nanoblog-linux-amd64
+

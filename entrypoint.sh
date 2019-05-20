@@ -19,12 +19,25 @@ if [ -z "${NANOBLOG_LETSENCRYPT-}" ] ; then
     export NANOBLOG_LETSENCRYPT="true"
 fi
 
+if [ -z "${SUBSPACE_HTTP_ADDR-}" ] ; then
+    export SUBSPACE_HTTP_ADDR=":80"
+fi
+
+if [ -z "${SUBSPACE_HTTP_INSECURE-}" ] ; then
+    export SUBSPACE_HTTP_INSECURE="false"
+fi
+
 # nanoblog service
 if ! test -d /etc/sv/nanoblog ; then
     mkdir /etc/sv/nanoblog
     cat <<RUNIT >/etc/sv/nanoblog/run
 #!/bin/sh
-exec /usr/bin/nanoblog --http-host "${NANOBLOG_HTTP_HOST}" --backlink "${NANOBLOG_BACKLINK}" --letsencrypt=${NANOBLOG_LETSENCRYPT}
+exec /usr/bin/nanoblog
+    "--http-host=${NANOBLOG_HTTP_HOST}" \
+    "--http-addr=${NANOBLOG_HTTP_ADDR}" \
+    "--http-insecure=${NANOBLOG_HTTP_INSECURE}" \
+    "--backlink=${NANOBLOG_BACKLINK}" \
+    "--letsencrypt=${NANOBLOG_LETSENCRYPT}"
 RUNIT
     chmod +x /etc/sv/nanoblog/run
 

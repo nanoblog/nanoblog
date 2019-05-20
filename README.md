@@ -15,11 +15,13 @@ After adding Nanoblog, start writing blog posts, creating threads, and crosspost
 * **Buffered Posts**
   * Add posts to your buffer to automatically publish on a selected schedule.
 * **Twitter Crossposting**
-  * Add your Twitter account to enable crossposting to your Twitter timeline.
+  * Add your Twitter account to enable crossposting to your timeline.
 * **Threaded Posts AKA tweetstorms**
   * Click the “Add another update” button to enable thread posting.
 * **Web Analytics**
   * Add javascript tracking code to your blog posts for web analytics.
+* **Single Sign-On (SSO) with SAML**
+  * Support for SAML providers like G Suite and Okta.
 
 ## Run Nanoblog on Portal Cloud
 
@@ -36,6 +38,7 @@ Running Nanoblog on a VPS is designed to be as simple as possible.
   * Automatic TLS using Let's Encrypt
   * Redirects http to https
   * No database required
+  * Works with a reverse proxy or standalone.
 
 ### 1. Get a server
 
@@ -81,24 +84,27 @@ $ nanoblog --http-host nanoblog.example.com
 
 ```bash
   -backlink string
-    	backlink (optional)
+        backlink (optional)
   -cpuprofile file
-    	write cpu profile to file
+        write cpu profile to file
   -datadir string
-    	data dir (default "/data")
+        data dir (default "/data")
   -debug
-    	debug mode
+        debug mode
   -help
-    	display help and exit
+        display help and exit
+  -http-addr string
+        HTTP listen address (default ":80")
   -http-host string
-    	HTTP host
+        HTTP host (required)
+  -letsencrypt
+        enable TLS using Let's Encrypt on port 443 (default true)
   -memprofile file
-    	write mem profile to file
+        write mem profile to file
   -version
-    	display version and exit
-
-
+        display version and exit
 ```
+
 ### Run as a Docker container
 
 The official image is `nanoblog/nanoblog`.

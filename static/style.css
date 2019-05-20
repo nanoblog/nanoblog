@@ -151,3 +151,7 @@ pre.code {
     margin: auto;
     border: 3px solid #ddd;
 }
+
+.readonly-input {
+    background-color: #f1f1f1 !important;
+}

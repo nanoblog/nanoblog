@@ -1,10 +1,16 @@
 package main
 
 import (
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
+	"crypto/x509/pkix"
 	"encoding/json"
+	"encoding/pem"
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"math/big"
 	"os"
 	"path/filepath"
 	"strings"
@@ -36,9 +42,16 @@ type Info struct {
 	Headerlink3URL string        `json:"headerlink3_url"`
 	Snippet        string        `json:"snippet"`
 	Schedule       time.Duration `json:"schedule"`
+	ScheduleHour   int           `json:"schedule_hour"`
 	HashKey        string        `json:"hash_key"`
 	BlockKey       string        `json:"block_key"`
-	Mail           struct {
+	Location       string        `json:"location"`
+	SAML           struct {
+		IDPMetadata string `json:"idp_metadata"`
+		PrivateKey  []byte `json:"private_key"`
+		Certificate []byte `json:"certificate"`
+	} `json:"saml"`
+	Mail struct {
 		From     string `json:"from"`
 		Server   string `json:"server"`
 		Port     int    `json:"port"`
@@ -75,11 +88,13 @@ func NewConfig(filename string) (*Config, error) {
 	// Create new config with defaults
 	if os.IsNotExist(err) {
 		c.Info = &Info{
-			HashKey:  randomString(32),
-			BlockKey: randomString(32),
-			Schedule: 24 * time.Hour,
+			HashKey:      randomString(32),
+			BlockKey:     randomString(32),
+			Schedule:     24 * time.Hour,
+			ScheduleHour: 9,
+			Location:     "UTC",
 		}
-		return c, c.save()
+		return c, c.generateSAMLKeyPair()
 	}
 	if err != nil {
 		return nil, err
@@ -88,6 +103,22 @@ func NewConfig(filename string) (*Config, error) {
 	// Open existing config
 	if err := json.Unmarshal(b, c); err != nil {
 		return nil, fmt.Errorf("invalid config %q: %s", filename, err)
+	}
+
+	// Set defaults for upgrades.
+	if c.Info.Schedule == 0 {
+		c.Info.Schedule = 24 * time.Hour
+	}
+	if c.Info.ScheduleHour == 0 {
+		c.Info.ScheduleHour = 9
+	}
+	if c.Info.Location == "" {
+		c.Info.Location = "UTC"
+	}
+	if len(c.Info.SAML.PrivateKey) == 0 || len(c.Info.SAML.Certificate) == 0 {
+		if err := c.generateSAMLKeyPair(); err != nil {
+			return nil, err
+		}
 	}
 
 	return c, nil
@@ -164,7 +195,7 @@ func (c *Config) AddDraft(body string) (Draft, error) {
 	draft := Draft{
 		ID:      draftID,
 		Body:    body,
-		Created: time.Now(),
+		Created: time.Now().In(getTimezone()),
 	}
 
 	c.Drafts = append(c.Drafts, &draft)
@@ -209,11 +240,12 @@ func (c *Config) findDraft(id string) (*Draft, error) {
 //
 
 type Post struct {
-	ID       string    `json:"id"`
-	Body     string    `json:"body"`
-	Tweet    int64     `json:"tweet"`
-	ParentID string    `json:"parent"`
-	Created  time.Time `json:"created"`
+	ID        string    `json:"id"`
+	Body      string    `json:"body"`
+	Tweet     int64     `json:"tweet"`
+	ParentID  string    `json:"parent"`
+	Scheduled bool      `json:"scheduled"`
+	Created   time.Time `json:"created"`
 
 	Thread []Post `json:"-"`
 }
@@ -274,6 +306,23 @@ func (c *Config) ListParentPosts() []Post {
 	return posts
 }
 
+func (c *Config) MostRecentScheduledPost() (Post, error) {
+	c.RLock("MostRecentScheduledPost")
+	defer c.RUnlock("MostRecentScheduledPost")
+	if len(c.Posts) == 0 {
+		return Post{}, ErrPostNotFound
+	}
+
+	for i := len(c.Posts) - 1; i >= 0; i-- {
+		p := c.Posts[i]
+		if !p.Scheduled {
+			continue
+		}
+		return *p, nil
+	}
+	return Post{}, ErrPostNotFound
+}
+
 func (c *Config) ListPosts() []Post {
 	c.RLock("ListPosts")
 	defer c.RUnlock("ListPosts")
@@ -289,7 +338,7 @@ func (c *Config) ListPosts() []Post {
 	return posts
 }
 
-func (c *Config) AddPost(body, parentID string) (Post, error) {
+func (c *Config) AddPost(body, parentID string, scheduled bool) (Post, error) {
 	c.Lock("AddPost")
 	defer c.Unlock("AddPost")
 
@@ -298,21 +347,12 @@ func (c *Config) AddPost(body, parentID string) (Post, error) {
 		return Post{}, ErrPostDuplicateID
 	}
 
-	/*
-		if len(c.Posts) > 0 {
-			p := c.Posts[len(c.Posts)-1]
-			if created.Sub(p.Created) < (1 * time.Minute) {
-				parentID = p.ID
-				p.ChildID = postID
-			}
-		}
-	*/
-
 	post := Post{
-		ID:       postID,
-		Body:     body,
-		ParentID: parentID,
-		Created:  time.Now(),
+		ID:        postID,
+		Body:      body,
+		ParentID:  parentID,
+		Scheduled: scheduled,
+		Created:   time.Now().In(getTimezone()),
 	}
 
 	c.Posts = append(c.Posts, &post)
@@ -372,5 +412,49 @@ func (c *Config) UpdatePost(id string, fn func(*Post) error) error {
 	if err := fn(t); err != nil {
 		return err
 	}
+	return c.save()
+}
+
+func (c *Config) generateSAMLKeyPair() error {
+	// Generate private key.
+	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		return err
+	}
+
+	// Generate the certificate.
+	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
+	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
+	if err != nil {
+		return err
+	}
+
+	tmpl := x509.Certificate{
+		NotBefore:    time.Now(),
+		NotAfter:     time.Now().AddDate(5, 0, 0),
+		SerialNumber: serialNumber,
+		Subject: pkix.Name{
+			CommonName:   httpHost,
+			Organization: []string{"Nanoblog"},
+		},
+		BasicConstraintsValid: true,
+	}
+
+	cert, err := x509.CreateCertificate(rand.Reader, &tmpl, &tmpl, &key.PublicKey, key)
+	if err != nil {
+		return err
+	}
+
+	// Generate private key PEM block.
+	c.Info.SAML.PrivateKey = pem.EncodeToMemory(&pem.Block{
+		Type:  "RSA PRIVATE KEY",
+		Bytes: x509.MarshalPKCS1PrivateKey(key),
+	})
+
+	// Generate certificate PEM block.
+	c.Info.SAML.Certificate = pem.EncodeToMemory(&pem.Block{
+		Type:  "CERTIFICATE",
+		Bytes: cert,
+	})
 	return c.save()
 }
