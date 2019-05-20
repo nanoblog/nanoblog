@@ -1,4 +1,4 @@
-# Nanoblog - open source microblog with buffering and Twitter crossposting
+# Nanoblog - open source microblog with scheduled posts and Twitter crossposting
 
 Nanoblog is a simple and professional blog with a 280 character limit that supports crossposting to your Twitter account. Posts can also be buffered for automatic publication on a selected schedule to keep your blog and Twitter account fresh.
 
@@ -12,8 +12,8 @@ After adding Nanoblog, start writing blog posts, creating threads, and crosspost
 
 * **Blogging on Easy Mode**
   * 280 character limit makes blogging accessible to everyone and threading makes it possible to write more when desired.
-* **Buffered Posts**
-  * Add posts to your buffer to automatically publish on a selected schedule.
+* **Scheduled Posts**
+  * Add posts to your queue to automatically publish on a selected schedule.
 * **Twitter Crossposting**
   * Add your Twitter account to enable crossposting to your timeline.
 * **Threaded Posts AKA tweetstorms**
